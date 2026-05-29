@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OBELICS × cc-chinese 端到端运行报告</title>
+<style>
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --panel-2: #1d222c;
+  --border: #2a3140;
+  --text: #e6e8ee;
+  --muted: #9aa3b2;
+  --accent: #6cc4ff;
+  --accent-2: #7ee787;
+  --warn: #ffb454;
+  --error: #ff7b72;
+  --code-bg: #0b0d12;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+h1, h2, h3 { line-height: 1.25; }
+h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.02em; }
+h2 { font-size: 21px; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+.lead { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin: 8px 0 24px; }
+.lead p { margin: 6px 0; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); margin-right: 6px; }
+.tag.ok { color: var(--accent-2); border-color: rgba(126,231,135,0.4); }
+.tag.warn { color: var(--warn); border-color: rgba(255,180,84,0.4); }
+.tag.err { color: var(--error); border-color: rgba(255,123,114,0.4); }
+
+.steps { counter-reset: step; padding-left: 0; list-style: none; }
+.steps > li {
+  counter-increment: step;
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 18px 14px 56px;
+  margin-bottom: 16px;
+}
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 16px; top: 16px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #0b0d12;
+  font-weight: 700; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.steps h3 { margin-top: 0; }
+
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+code.inline {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+}
+.kbd { background: #2a3140; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.metric {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.metric .v { font-size: 22px; font-weight: 600; color: var(--accent); }
+.metric .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.flow {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 12px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 8px;
+  margin: 12px 0;
+}
+.flow .node {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; font-size: 12.5px; white-space: nowrap;
+}
+.flow .arrow { color: var(--muted); font-size: 13px; }
+
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px;
+}
+th, td {
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+th { color: var(--muted); font-weight: 500; }
+
+.doc-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+}
+.doc-card .url { font-size: 12px; color: var(--accent); word-break: break-all; margin-bottom: 10px; }
+.interleave > .row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.interleave > .row:last-child { border-bottom: none; }
+.interleave .badge { flex-shrink: 0; width: 36px; font-size: 11px; color: var(--muted); padding-top: 4px; }
+.interleave .body { flex: 1; min-width: 0; }
+.interleave .text-body { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+.interleave .img-url { font-size: 12px; color: var(--muted); word-break: break-all; }
+.interleave img { max-width: 140px; max-height: 140px; border: 1px solid var(--border); border-radius: 4px; display: block; margin-bottom: 4px; }
+
+details { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+details[open] summary { margin-bottom: 8px; }
+
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+.callout.warn { border-left-color: var(--warn); }
+
+.footer { color: var(--muted); font-size: 12px; margin-top: 40px; text-align: center; }
+a { color: var(--accent); }
+.hl-add { color: var(--accent-2); }
+.hl-del { color: var(--error); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>OBELICS × cc-chinese 端到端运行报告</h1>
+<div class="sub">
+  把 <code class="inline">part-00000</code> 中文 HTML 数据，用 HuggingFace OBELICS 流水线跑成图文交错文档。
+</div>
+
+<div class="lead">
+  <p><span class="tag ok">✓ 阶段 1</span> 用 <code class="inline">cc-chinese/1_parse.py</code> 解析 <code class="inline">part-00000</code>，输出 <b>4975</b> 个 HTML + manifest。</p>
+  <p><span class="tag ok">✓ 阶段 2</span> Clone OBELICS、安装依赖、写适配中文的过滤配置、写驱动 <code class="inline">run_cc_chinese.py</code>。</p>
+  <p><span class="tag ok">✓ 阶段 3</span> 在前 50 条样本上端到端跑通：HTML → DOM 简化 → 节点抽取 → 图片下载 → 文档过滤，<b>50 → 12 篇</b> 通过过滤。</p>
+</div>
+
+<h2>1. 输入数据</h2>
+<table>
+  <tr><th>项</th><th>值</th></tr>
+  <tr><td>路径</td><td><code class="inline">/ytech_m2v8_hdd/workspace/kling_mm/zhengyuanhong/interleave/part-00000</code></td></tr>
+  <tr><td>大小</td><td>778 MB</td></tr>
+  <tr><td>记录数</td><td>4975 行</td></tr>
+  <tr><td>每行格式</td><td>Python <code class="inline">dict</code> 字面量（单引号），字段 <code class="inline">img_num</code>、<code class="inline">html</code></td></tr>
+  <tr><td>语言</td><td>简体/繁体中文为主</td></tr>
+</table>
+
+<details><summary>查看一行原始记录（截断到 300 字符）</summary>
+<pre>{'img_num': 10, 'html': '&lt;!DOCTYPE html&gt;\n&lt;html lang="zh"&gt;\n&lt;head&gt;\n  &lt;!-- SEO Tags --&gt;\n  &lt;title&gt;BX-2 Pro | ROMI AUDIO&lt;/title&gt;\n  &lt;link rel="canonical" href="https://www.romiaudio.co.uk/zh/product-page/bx-2-pro"/&gt;\n  &lt;meta name="robots" content="index"/&gt;\n  …'}</pre>
+</details>
+
+<h2>2. 流水线全景</h2>
+<div class="flow">
+  <span class="node">part-00000</span><span class="arrow">→</span>
+  <span class="node">1_parse.py</span><span class="arrow">→</span>
+  <span class="node">html/*.html</span><span class="arrow">→</span>
+  <span class="node">DOMTreeSimplificator</span><span class="arrow">→</span>
+  <span class="node">PreExtractionSimplificator</span><span class="arrow">→</span>
+  <span class="node">img2dataset</span><span class="arrow">→</span>
+  <span class="node">urls_to_images</span><span class="arrow">→</span>
+  <span class="node">Filter (node + doc)</span><span class="arrow">→</span>
+  <span class="node">interleaved jsonl</span>
+</div>
+
+<h2>3. 运行步骤</h2>
+
+<ol class="steps">
+
+<li>
+  <h3>解析 part-00000</h3>
+  <p>跑 <code class="inline">cc-chinese/1_parse.py</code>，把每行 JSON-ish 记录里的 <code class="inline">html</code> 字段写到独立文件。</p>
+  <pre>cd /ytech_m2v8_hdd/workspace/kling_mm/zhengyuanhong
+ln -sfn /Users/amjstj/zhengyuanhong/interleave/part-00000 \
+       data/cc-chinese/part-00000
+python3 interleave/cc-chinese/1_parse.py</pre>
+  <p><span class="tag ok">输出</span></p>
+  <ul>
+    <li><code class="inline">outputs/cc-chinese/raw/html/{1..4975}.html</code></li>
+    <li><code class="inline">outputs/cc-chinese/raw/records.jsonl</code> — <code class="inline">{img_num, html_path}</code> 每行一条</li>
+    <li><code class="inline">outputs/cc-chinese/raw/html_files.txt</code> — html 路径清单（供后续流水线消费）</li>
+  </ul>
+  <p>耗时约 4 秒（多进程，25 batch）。</p>
+</li>
+
+<li>
+  <h3>Clone OBELICS（走代理）</h3>
+  <p>这台机器直连 github.com 超时；用公司 squid 代理才能拉到。</p>
+  <pre>export http_proxy=http://oversea-squid2.ko.txyun:11080
+export https_proxy=http://oversea-squid2.ko.txyun:11080
+export no_proxy=localhost,127.0.0.1,corp.kuaishou.com
+
+git clone https://github.com/huggingface/OBELICS.git \
+  /ytech_m2v8_hdd/workspace/kling_mm/zhengyuanhong/interleave/OBELICS</pre>
+</li>
+
+<li>
+  <h3>安装依赖</h3>
+  <p>OBELICS 的 <code class="inline">requirements.txt</code> 全部装上后，<code class="inline">kenlm</code> 必须从 github 源码装，仍然走代理。</p>
+  <pre>pip install selectolax bs4 warcio pathos pyyaml datasets img2dataset \
+            emoji==1.6.1 fasttext sentencepiece
+
+# 仅 kenlm 需要走代理
+http_proxy=$http_proxy https_proxy=$https_proxy \
+  pip install https://github.com/kpu/kenlm/archive/master.zip</pre>
+  <div class="callout warn">
+    <b>注意</b>：这台机器的 pip 默认指向 <code class="inline">pypi.corp.kuaishou.com</code>，正常包不需要代理；只有 github 源（kenlm）才需要。
+  </div>
+</li>
+
+<li>
+  <h3>写中文友好的过滤配置</h3>
+  <p>OBELICS 默认配置面向英文 CommonCrawl —— stopword/common-word/perplexity/lang-id/flagged-word 这些过滤项都用英文词表与英文 KenLM。直接套用会把中文文档全部过滤掉。</p>
+  <p>新增 <code class="inline">obelics/configs/config_filter_web_documents_zh.yaml</code>，关掉这些英文专用检查，保留结构性检查（图片尺寸/比例/字符重复/特殊字符比/图片数量等）。关键差异：</p>
+  <pre><span class="hl-del">cond_check_stopword_ratio_node_level: True   # 英文版</span>
+<span class="hl-add">cond_check_stopword_ratio_node_level: False  # 中文版</span>
+<span class="hl-del">cond_check_common_word_ratio_doc_level: True</span>
+<span class="hl-add">cond_check_common_word_ratio_doc_level: False</span>
+<span class="hl-del">cond_check_lang_id_doc_level: True</span>
+<span class="hl-add">cond_check_lang_id_doc_level: False</span>
+<span class="hl-del">cond_check_perplexity_score_doc_level: True</span>
+<span class="hl-add">cond_check_perplexity_score_doc_level: False</span></pre>
+</li>
+
+<li>
+  <h3>写驱动 <code class="inline">run_cc_chinese.py</code></h3>
+  <p>OBELICS 的 build 脚本（<code class="inline">build_obelics/02_*.py</code>、<code class="inline">05_*.py</code>）依赖 S3、SLURM-shape 的输入，不能直接跑。我写了一个本地驱动复用 OBELICS 的 processors：</p>
+  <ol>
+    <li>读 <code class="inline">html_files.txt</code>，取前 <code class="inline">--limit</code> 条 → 构造 HuggingFace <code class="inline">Dataset</code>（<code class="inline">html</code> + <code class="inline">url</code> 列，<code class="inline">url</code> 从 <code class="inline">&lt;link rel="canonical"&gt;</code> 抽取）</li>
+    <li>跑 <code class="inline">DOMTreeSimplificator</code> + <code class="inline">PreExtractionSimplificator</code> → <code class="inline">texts</code> / <code class="inline">images</code> / <code class="inline">metadata</code> 三列</li>
+    <li>抽出所有 image URL → 调 <code class="inline">img2dataset</code> 下载（webdataset .tar 格式）</li>
+    <li>把图片字节 bind 回每条记录 → <code class="inline">images_urls</code> 列保留原 URL，<code class="inline">images</code> 列是 PIL bytes</li>
+    <li>跑 <code class="inline">WebDocumentFilteringNodeLevel</code> + <code class="inline">WebDocumentFilteringDocLevel</code></li>
+    <li>结果保存为 HF dataset + jsonl</li>
+  </ol>
+</li>
+
+<li>
+  <h3>执行</h3>
+  <pre>export http_proxy=... https_proxy=...   # img2dataset 要联外网
+
+cd /ytech_m2v8_hdd/workspace/kling_mm/zhengyuanhong/interleave/OBELICS
+python3 run_cc_chinese.py \
+  --limit 50 --num-proc 4 \
+  --download-images --thread-count 16</pre>
+</li>
+
+</ol>
+
+<h2>4. 运行结果</h2>
+
+<div class="grid">
+  <div class="metric"><div class="v">4975</div><div class="l">part-00000 行数</div></div>
+  <div class="metric"><div class="v">50</div><div class="l">本次试跑文档数</div></div>
+  <div class="metric"><div class="v">112</div><div class="l">提取出的 image URL</div></div>
+  <div class="metric"><div class="v">58</div><div class="l">img2dataset 下载成功</div></div>
+  <div class="metric"><div class="v">12</div><div class="l">过滤后留下的文档</div></div>
+  <div class="metric"><div class="v">10s</div><div class="l">图片下载总耗时</div></div>
+</div>
+
+<h3>img2dataset 下载结果</h3>
+<table>
+<tr><th>状态</th><th>数量</th><th>占比</th></tr>
+<tr><td><span class="tag ok">success</span></td><td>58</td><td>51.8%</td></tr>
+<tr><td><span class="tag err">502 Bad Gateway（代理隧道层）</span></td><td>50</td><td>44.6%</td></tr>
+<tr><td><span class="tag err">编码错误（URL 非 ASCII）</span></td><td>2</td><td>1.8%</td></tr>
+<tr><td><span class="tag err">403 Forbidden</span></td><td>1</td><td>0.9%</td></tr>
+<tr><td><span class="tag err">图片解码失败</span></td><td>1</td><td>0.9%</td></tr>
+</table>
+
+<h3>过滤后样例（来自 singkeefoods.co.uk 中文商品页）</h3>
+<div class="doc-card">
+  <div class="url">https://singkeefoods.co.uk/zh/express-delivery/5776-green-tea-cake.html</div>
+  <div class="interleave">
+    <div class="row"><div class="badge">T</div><div class="body text-body">綠茶蛋糕
+
+In Stock
+綠茶蛋糕
+£4.15
+
+100% Secure Payments</div></div>
+    <div class="row"><div class="badge">I</div><div class="body">
+      <img src="assets/sample_image_1.jpg" alt="商品图 1" />
+      <div class="img-url">https://singkeefoods.co.uk/12166-home_default/1.jpg <span class="tag ok">下载成功 236×305</span></div>
+    </div></div>
+    <div class="row"><div class="badge">T</div><div class="body text-body">Customer also purchased</div></div>
+    <div class="row"><div class="badge">T</div><div class="body text-body">零食
+
+Jack 'n Jill Magic Creams Chocolate Cream Cracker Sandwich (28gX10 Packs) 280g</div></div>
+    <div class="row"><div class="badge">I</div><div class="body">
+      <img src="assets/sample_image_2.jpg" alt="商品图 2" />
+      <div class="img-url">https://singkeefoods.co.uk/10904-home_default/honor-potsticker-chicken-dumplings-1kg-frozen.jpg <span class="tag ok">下载成功 236×305</span></div>
+    </div></div>
+    <div class="row"><div class="badge">T</div><div class="body text-body">麵條
+
+龙胆河内米粉卷400g</div></div>
+    <div class="row"><div class="badge">I</div><div class="body">
+      <img src="assets/sample_image_3.jpg" alt="商品图 3" />
+      <div class="img-url">https://singkeefoods.co.uk/14933-home_default/400g.jpg <span class="tag ok">下载成功</span></div>
+    </div></div>
+    <div class="row"><div class="badge">T</div><div class="body text-body">果汁饮料
+
+维他芒果果汁饮料 250ml
+
+£1.13
+清爽美味。 芒果味爆炸,就像咬到成熟多汁的芒果!</div></div>
+  </div>
+</div>
+
+<h2>5. 产出文件清单</h2>
+<table>
+  <tr><th>路径</th><th>内容</th></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/raw/html/*.html</code></td><td>4975 个原始 HTML</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/raw/records.jsonl</code></td><td>manifest</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/raw/html_files.txt</code></td><td>html 路径清单</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/web_documents_raw/</code></td><td>第一阶段抽取（无图片字节）</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/image_urls.txt</code></td><td>112 个 image URL</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/tmp/downloaded_images/*.tar</code></td><td>img2dataset 输出（58 张 jpg）</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/image_dataset/</code></td><td>合并后的图片 HF dataset</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/web_documents_with_images/</code></td><td>图文绑定后的文档（带 PIL bytes）</td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/web_documents_filtered/</code></td><td><b>最终图文交错文档（12 条）</b></td></tr>
+  <tr><td><code class="inline">outputs/cc-chinese/obelics/web_documents_filtered.jsonl</code></td><td><b>JSONL 版（人读 / 后续消费）</b></td></tr>
+</table>
+
+<h2>6. 可复用资产</h2>
+<table>
+  <tr><th>文件</th><th>说明</th></tr>
+  <tr><td><a href="run_cc_chinese.py"><code class="inline">run_cc_chinese.py</code></a></td><td>本地端到端驱动（OBELICS 一键跑通脚本）</td></tr>
+  <tr><td><a href="config_filter_web_documents_zh.yaml"><code class="inline">config_filter_web_documents_zh.yaml</code></a></td><td>中文友好的过滤配置</td></tr>
+  <tr><td><a href="samples/cc_chinese_1_parse.py"><code class="inline">samples/cc_chinese_1_parse.py</code></a></td><td>part-00000 解析脚本（来自用户 cc-chinese 流水线）</td></tr>
+  <tr><td><a href="samples/web_documents_filtered_preview.jsonl"><code class="inline">samples/web_documents_filtered_preview.jsonl</code></a></td><td>过滤后样例前 3 条</td></tr>
+  <tr><td><a href="samples/web_documents_filtered.jsonl"><code class="inline">samples/web_documents_filtered.jsonl</code></a></td><td>过滤后全部 12 条</td></tr>
+</table>
+
+<h2>7. 遇到的坑与解法</h2>
+
+<h3>① 网络不通</h3>
+<p>本机直连 github.com / huggingface.co / pypi.org 都超时（无 DNS 出口）。<b>解法</b>：用公司 squid 代理 <code class="inline">http://oversea-squid2.ko.txyun:11080</code>。pip 走公司内 PyPI 镜像不用代理，只有直连 github 的依赖（kenlm zip、git clone）才需要。</p>
+
+<h3>② OBELICS 没在 PyPI 上</h3>
+<p>无法 <code class="inline">pip install obelics</code>，必须 clone + 用 <code class="inline">obelics.processors</code> 模块。</p>
+
+<h3>③ <code class="inline">build_obelics/*</code> 脚本依赖 S3 / 200-shard 集群环境</h3>
+<p>不能直接跑。<b>解法</b>：自己写 <code class="inline">run_cc_chinese.py</code>，复用 processors，去掉 S3/分片逻辑。</p>
+
+<h3>④ 默认过滤配置全是英文导向</h3>
+<p>stopword/common-word/perplexity/lang-id 用英文词表与英文 KenLM。<b>解法</b>：关掉这些英文专用项，保留结构性过滤。</p>
+
+<h3>⑤ 类名错</h3>
+<p><code class="inline">obelics.processors</code> 暴露的是 <code class="inline">CommonCrawlWebDocumentExtractor</code>，不是 <code class="inline">WebDocumentExtractor</code>。修了一行 import alias。</p>
+
+<h3>⑥ 不下载图片时过滤器报 <code class="inline">'str' object has no attribute 'size'</code></h3>
+<p>OBELICS 的 node-level 过滤在 <code class="inline">if image is not None:</code> 分支里无条件访问 <code class="inline">image.size</code>。它假设 <code class="inline">images</code> 列已经被 <code class="inline">urls_to_images</code> 替换成 PIL 对象，而 URL 字符串也是 truthy。<b>解法</b>：要么真下载（首选），要么把 URL 临时替换成 <code class="inline">None</code> 再跑 node-level；driver 里两条路径都支持。</p>
+
+<h3>⑦ <code class="inline">html_to_web_documents</code> 会移除 url 列</h3>
+<p>它用 <code class="inline">dataset.map(..., remove_columns=dataset.column_names)</code>。<b>解法</b>：在 map 前 stash <code class="inline">url</code>，map 后 <code class="inline">add_column</code> 加回。</p>
+
+<h2>8. 复跑 / 扩量</h2>
+<pre># 默认 50 条（带图片下载）
+python3 run_cc_chinese.py --limit 50 --download-images
+
+# 全量 4975 条 + 8 并发 + 32 下载线程
+export http_proxy=http://oversea-squid2.ko.txyun:11080
+export https_proxy=$http_proxy
+python3 run_cc_chinese.py \
+  --limit 4975 --num-proc 8 \
+  --download-images --thread-count 32 \
+  --out-dir /ytech_m2v8_hdd/workspace/kling_mm/zhengyuanhong/interleave/outputs/cc-chinese/obelics-full</pre>
+
+<div class="callout">
+  <b>注意</b>：50 条样本里就有 50/112 = 45% 的图片 URL 死链 / 502。全量跑下载失败比例可能更高 —— 中文站源更新快，CommonCrawl 抓取时间也比较旧。
+</div>
+
+<div class="footer">
+  报告生成时间：2026-05-29 ｜ OBELICS commit: <code class="inline">huggingface/OBELICS@main</code>
+</div>
+
+</div>
+</body>
+</html>
