@@ -1,5 +1,8 @@
 # obelics-cc-chinese-report
 
+> ⚠️ 此仓库已迁移到统一的实验汇总仓库 [Yuanhong-Zheng/experiment-reports](https://github.com/Yuanhong-Zheng/experiment-reports) 的 [`obelics-cc-chinese/`](https://github.com/Yuanhong-Zheng/experiment-reports/tree/main/obelics-cc-chinese) 子目录。新地址：https://yuanhong-zheng.github.io/experiment-reports/obelics-cc-chinese/
+> 此仓库保留作为归档，后续更新只在新仓库进行。
+
 把 [cc-chinese](https://github.com/huggingface/OBELICS) 中文 HTML 数据用 [OBELICS](https://github.com/huggingface/OBELICS) 流水线跑成图文交错文档的端到端记录。
 
 打开 [`index.html`](./index.html) 查看完整报告（含步骤、命令、过滤前后样例、下载图片预览、坑与解法）。
